@@ -14,13 +14,14 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3)
     transaction_type = models.CharField(max_length=6, choices=TRANSACTION_TYPE_CHOICES)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField()
     category = models.CharField(max_length=100, blank=True, null=True)
     unique_hash = models.CharField(max_length=64, unique=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['user', 'date']),
-            models.Index(fields=['user', 'transaction_type']),
         ]
-    
+
+    def __str__(self):
+        return f"{self.user} - {self.date} - {self.amount} {self.currency}"

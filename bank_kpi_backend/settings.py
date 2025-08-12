@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
 
@@ -46,7 +47,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     
     # Local apps
-    'users'
+    'users',
     'transactions',
     'reports'
 ]
@@ -87,8 +88,12 @@ WSGI_APPLICATION = 'bank_kpi_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DATABASE_NAME', 'bank_kpi'),
+        'USER': os.getenv('DATABASE_USER', 'postgres'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'HTwW0EhyBaK1Z60AnQTpezqLRZZi6vnazlW9wi7xVoc3buxScaTCOpCKFNfhp9nX'),
+        'HOST': os.getenv('DATABASE_HOST', '192.168.1.104'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
     }
 }
 
@@ -115,9 +120,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'drf_spectacular.openapi.AutoSchema',
-    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
