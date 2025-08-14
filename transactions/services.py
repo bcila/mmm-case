@@ -34,9 +34,9 @@ def import_transactions(user, csv_file, idempotency_key: str):
     if ImportBatch.objects.filter(idempotency_key=idempotency_key, user=user).exists():
         return False
     
-    text_file = TextIOWrapper(csv_file, encoding='utf-8')
+    text_file = TextIOWrapper(csv_file, encoding='utf-8-sig')
     reader = csv.DictReader(text_file)
-    
+
     with db_transaction.atomic():
         batch = ImportBatch.objects.create(user=user, idempotency_key=idempotency_key)
 
@@ -53,7 +53,7 @@ def import_transactions(user, csv_file, idempotency_key: str):
                     "date": row['date'],
                     "amount": row['amount'],
                     "currency": currency,
-                    "type": row['type'],
+                    "transaction_type": row['type'],
                     "description": row['description'],
                     "category": category,
                 }
