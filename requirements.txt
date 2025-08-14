@@ -5,6 +5,7 @@ django-filter==25.1
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.28.0
+drf-yasg==1.21.10
 gunicorn==23.0.0
 inflection==0.5.1
 jsonschema==4.25.0
@@ -14,6 +15,7 @@ packaging==25.0
 psycopg2-binary==2.9.10
 PyJWT==2.10.1
 python-decouple==3.8
+pytz==2025.2
 PyYAML==6.0.2
 referencing==0.36.2
 rpds-py==0.27.0
