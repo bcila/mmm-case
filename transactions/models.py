@@ -22,7 +22,7 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3)
     transaction_type = models.CharField(max_length=6, choices=TRANSACTION_TYPE_CHOICES)
-    description = models.TextField()
+    description = models.TextField(max_length=255, blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
     unique_hash = models.CharField(max_length=64, unique=True)
     batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="transactions", default=1)
