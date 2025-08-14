@@ -45,11 +45,12 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'django_filters',
     'drf_spectacular',
+    'drf_yasg',
     
     # Local apps
-    'users',
-    'transactions',
-    'reports'
+    'users.apps.UsersConfig',
+    'transactions.apps.TransactionsConfig',
+    'reports.apps.ReportsConfig',
 ]
 
 MIDDLEWARE = [
@@ -121,6 +122,16 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+}
+
+SPECTACULAR_SETTINGS = {
+    'COMPONENT_SPLIT_REQUEST': True
 }
 
 SIMPLE_JWT = {
