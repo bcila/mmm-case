@@ -8,19 +8,15 @@ def calculate_kpi_summary(user, start_date=None, end_date=None):
     if end_date:
         queryset = queryset.filter(date__lte=end_date)
 
-    # toplam gelir
-    total_income = queryset.filter(type="credit").aggregate(total=Sum("amount"))["total"] or 0
+    total_income = queryset.filter(transaction_type="credit").aggregate(total=Sum("amount"))["total"] or 0
 
-    # toplam gider
-    total_expense = queryset.filter(type="debit").aggregate(total=Sum("amount"))["total"] or 0
+    total_expense = queryset.filter(transaction_type="debit").aggregate(total=Sum("amount"))["total"] or 0
     total_expense = abs(total_expense)
 
-    # net nakit akışı
     net_cash_flow = total_income - total_expense
 
-    # en yüksek gider kategorileri
     expense_categories = (
-        queryset.filter(type="debit", category__isnull=False)
+        queryset.filter(transaction_type="debit", category__isnull=False)
         .values("category")
         .annotate(total=Sum("amount"))
         .order_by("total")[:5]
