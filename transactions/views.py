@@ -35,9 +35,10 @@ class TransactionUploadView(APIView):
         
         return Response({"message": "Transactions uploaded successfully"}, status=status.HTTP_201_CREATED)
     
+
 class TransactionListView(generics.ListAPIView):
-    serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TransactionSerializer
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
@@ -47,6 +48,19 @@ class TransactionListView(generics.ListAPIView):
             user=user,
             start_date=params.get("start_date"),
             end_date=params.get("end_date"),
-            type=params.get("type"),
+            transaction_type=params.get("transaction_type"),
             category=params.get("category"),
         )
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("start_date", str, description="Filter transactions from this date (YYYY-MM-DD)", required=False),
+            OpenApiParameter("end_date", str, description="Filter transactions up to this date (YYYY-MM-DD)", required=False),
+            OpenApiParameter("transaction_type", str, description="Filter by transaction type, e.g. credit or debit", required=False),
+            OpenApiParameter("category", str, description="Filter by transaction category", required=False),
+        ],
+        description="Retrieve filtered list of transactions for the authenticated user.",
+        responses=TransactionSerializer(many=True),
+    )
+    # extend schema for API documentation, couse drf cannot detect get_queryset method
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

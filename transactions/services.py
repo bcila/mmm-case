@@ -1,24 +1,43 @@
 import csv
 import hashlib
 from io import TextIOWrapper
+from collections import Counter
+from datetime import datetime, time
 from rest_framework.exceptions import ValidationError
+from django.utils.timezone import make_aware, is_aware
 from django.db import transaction as db_transaction
 from .models import Transaction, ImportBatch
+from decimal import Decimal
 
-CATEGORY_MAP = {
-    "satış": "Sales",
-    "fatura": "Utilities",
-    "kira": "Rent",
-    "yemek": "Food",
-    "market": "Groceries",
+# predefined categories with keywords
+CATEGORY_KEYWORDS = {
+    "Sales": ["satış", "fatura"],
+    "Rent": ["kira"],
+    "SaaS": ["saas", "crm", "aylık lisans"],
+    "Office Supplies": ["kırtasiye", "ofis", "kalem", "defter"],
+    "Payroll": ["maaş", "personel", "çalışan", "ücret"],
+    "Utilities": ["elektrik", "su", "internet", "fatura"],
 }
 
-def detect_category(description: str) -> str | None:
+# predefined exchange rates for currency conversion
+# could be fetched from an API in a real application
+EXCHANGE_RATES = {
+    'USD': Decimal('40.89'),
+    'EUR': Decimal('47.81'),
+    'TRY': Decimal('1'),
+}
+
+# could be change with ml/nlp model in future
+def detect_category(description: str) -> str:
     desc_lower = description.lower()
-    for keyword, category in CATEGORY_MAP.items():
-        if keyword in desc_lower:
-            return category
-    return None
+    scores = Counter()
+
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in desc_lower:
+                scores[category] += 1
+
+    return scores.most_common(1)[0][0] if scores else "Uncategorized"
 
 def validate_currency(value: str) -> str:
     value = value.strip().upper()
@@ -50,7 +69,7 @@ def import_transactions(user, csv_file, idempotency_key: str):
                 defaults={
                     "user": user,
                     "batch": batch,
-                    "date": row['date'],
+                    "date": make_aware(datetime.strptime(row['date'], "%Y-%m-%d")),
                     "amount": row['amount'],
                     "currency": currency,
                     "transaction_type": row['type'],
@@ -59,15 +78,44 @@ def import_transactions(user, csv_file, idempotency_key: str):
                 }
             )
             
-def get_filtered_transactions(user, start_date=None, end_date=None, type=None, category=None):
-
+def get_filtered_transactions(user, start_date=None, end_date=None, transaction_type=None, category=None):
     qs = Transaction.objects.filter(user=user)
+
     if start_date:
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        if not is_aware(start_date):
+            start_date = make_aware(datetime.combine(start_date.date(), time.min))
         qs = qs.filter(date__gte=start_date)
+
     if end_date:
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        if not is_aware(end_date):
+            end_date = make_aware(datetime.combine(end_date.date(), time.max))
         qs = qs.filter(date__lte=end_date)
-    if type:
-        qs = qs.filter(type=type)
+
+    if transaction_type:
+        qs = qs.filter(transaction_type=transaction_type)
+
     if category:
         qs = qs.filter(category__iexact=category)
+
     return qs.order_by("-date")
+
+
+def convert_amount(amount: Decimal, from_currency: str, to_currency: str) -> Decimal:
+    if from_currency == to_currency:
+        return amount
+
+    rate_from = EXCHANGE_RATES[from_currency]
+    rate_to = EXCHANGE_RATES[to_currency]
+
+    if from_currency == "TRY":
+        return amount / rate_to
+
+    if to_currency == "TRY":
+        return amount * rate_from
+
+    amount_in_try = amount * rate_from
+    return amount_in_try / rate_to
