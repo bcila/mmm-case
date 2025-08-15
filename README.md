@@ -1,4 +1,4 @@
-# Bank KPI Backend
+# KPI Backend
 
 Bu proje, Django Rest Framework ve Celery kullanarak finansal işlemlerin KPI (Key Performance Indicator) raporlarını üreten bir backend servisidir. PostgreSQL ve Redis ile Docker ortamında çalışır.
 
