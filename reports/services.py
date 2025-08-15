@@ -4,24 +4,27 @@ from datetime import datetime, time
 from django.utils.timezone import make_aware, is_aware
 from django.db.models import Sum
 from transactions.services import convert_amount
-from utils import round_decimal
+from utils import round_decimal, normalize_date
 
 def calculate_kpi_summary(user, start_date=None, end_date=None, target_currency="TRY"):
     queryset = Transaction.objects.filter(user=user)
+    
+    if not queryset.exists():
+        return {
+            "total_income": 0,
+            "total_expense": 0,
+            "net_cash_flow": 0,
+            "top_expense_categories": [],
+            "currency": target_currency,
+        }
 
     # timezone-aware date filtering
     if start_date:
-        if isinstance(start_date, str):
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        if not is_aware(start_date):
-            start_date = make_aware(datetime.combine(start_date.date(), time.min))
+        start_date = normalize_date(start_date)
         queryset = queryset.filter(date__gte=start_date)
 
     if end_date:
-        if isinstance(end_date, str):
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        if not is_aware(end_date):
-            end_date = make_aware(datetime.combine(end_date.date(), time.max))
+        end_date = normalize_date(end_date, is_end=True)
         queryset = queryset.filter(date__lte=end_date)
 
     # total income, expense and net cash flow calculations 
