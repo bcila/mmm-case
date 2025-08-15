@@ -58,3 +58,16 @@ def import_transactions(user, csv_file, idempotency_key: str):
                     "category": category,
                 }
             )
+            
+def get_filtered_transactions(user, start_date=None, end_date=None, type=None, category=None):
+
+    qs = Transaction.objects.filter(user=user)
+    if start_date:
+        qs = qs.filter(date__gte=start_date)
+    if end_date:
+        qs = qs.filter(date__lte=end_date)
+    if type:
+        qs = qs.filter(type=type)
+    if category:
+        qs = qs.filter(category__iexact=category)
+    return qs.order_by("-date")

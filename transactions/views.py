@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
+from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiRequest
 from .services import import_transactions
 from .serializers import MessageResponseSerializer, TransactionUploadSerializer, TransactionSerializer
-from .models import Transaction
+from .services import get_filtered_transactions
 
 class TransactionUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -37,23 +38,15 @@ class TransactionUploadView(APIView):
 class TransactionListView(generics.ListAPIView):
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Transaction.objects.filter(user=user)
-
-        start_date = self.request.query_params.get("start_date")
-        end_date = self.request.query_params.get("end_date")
-        type_param = self.request.query_params.get("type")
-        category = self.request.query_params.get("category")
-
-        if start_date:
-            queryset = queryset.filter(date__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(date__lte=end_date)
-        if type_param:
-            queryset = queryset.filter(type=type_param)
-        if category:
-            queryset = queryset.filter(category__iexact=category)
-
-        return queryset.order_by("-date")
+        params = self.request.query_params
+        return get_filtered_transactions(
+            user=user,
+            start_date=params.get("start_date"),
+            end_date=params.get("end_date"),
+            type=params.get("type"),
+            category=params.get("category"),
+        )
